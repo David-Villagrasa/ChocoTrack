@@ -35,10 +35,10 @@ def capture_and_analyze():
 
         # Define the region for the right half of the screen
         region = {
-            "top": 0,
-            "left": screen_width // 2,  # Start from the middle of the screen
-            "width": screen_width // 2,  # Capture the right half
-            "height": screen_height
+            "top": int(screen_height*0.15),
+            "left": int(screen_width*0.7),  # Start from the middle of the screen
+            "width": int(screen_width*0.125),  # Capture the right half
+            "height": int(screen_height*0.3)
         }
 
         while capture_running:
@@ -59,7 +59,7 @@ def capture_and_analyze():
             print(extracted_text)
 
             # Optional: Add a small delay to avoid excessive CPU usage
-            cv2.waitKey(2)
+            cv2.waitKey(4)
 
 def stop_capture():
     global capture_running
@@ -74,4 +74,4 @@ keyboard.add_hotkey("esc", stop_capture)
 print("🔴 Press Ctrl+Alt+T to start real-time capture and analysis.")
 print("🛑 Press Esc to stop capture.")
 
-keyboard.wait()  # Keeps the script running indefinitely
+keyboard.wait("esc")  # Keeps the script running indefinitely
