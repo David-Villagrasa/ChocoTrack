@@ -1,34 +1,77 @@
 import mss
-import keyboard
 import pytesseract
 import cv2
-import numpy as np  # Necessary for image processing
+import numpy as np
+import keyboard
+import threading
 
 # Set the Tesseract installation path (adjust if necessary)
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Define which monitor to capture (1 = primary, 2 = secondary, etc.)
-MONITOR_ID = 2
+MONITOR_ID = 1
 
-def capture_text():
+# Variable de control para detener la captura
+capture_running = True
+
+def preprocess_image(image):
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+    
+    # Apply binary thresholding
+    _, binary = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+    
+    # Apply median blur to remove noise
+    blurred = cv2.medianBlur(binary, 3)
+    
+    return blurred
+
+def capture_and_analyze():
+    global capture_running
     with mss.mss() as sct:
         monitor = sct.monitors[MONITOR_ID]  # Select the monitor
-        screenshot = sct.grab(monitor)  # Capture the screen
+        screen_width = monitor["width"]
+        screen_height = monitor["height"]
 
-        # Convert the screenshot to a NumPy array
-        img = np.array(screenshot)  # Convert to NumPy array
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)  # Convert to grayscale
+        # Define the region for the right half of the screen
+        region = {
+            "top": 0,
+            "left": screen_width // 2,  # Start from the middle of the screen
+            "width": screen_width // 2,  # Capture the right half
+            "height": screen_height
+        }
 
-        # Extract text using OCR
-        extracted_text = pytesseract.image_to_string(img, lang="eng")  # Change "eng" to another language if needed
+        while capture_running:
+            # Continuously capture the right half of the screen
+            screenshot = sct.grab(region)
 
-        # Display the extracted text
-        print("\n📜 Extracted Text:")
-        print(extracted_text)
+            # Convert the screenshot to a NumPy array
+            img = np.array(screenshot)
+            
+            # Preprocess the image
+            preprocessed_img = preprocess_image(img)
+            
+            # Perform OCR on the preprocessed image
+            extracted_text = pytesseract.image_to_string(preprocessed_img, lang="eng", config='--psm 6')
 
-# Set up a keyboard shortcut to capture and analyze text
-keyboard.add_hotkey("ctrl+alt+t", capture_text)
+            # Show the extracted text
+            print("\n📜 Extracted Text:")
+            print(extracted_text)
 
-print("🔴 Press Ctrl+Alt+T to capture and analyze text.")
-print("🔴 Press Esc to exit.")
-keyboard.wait("esc")  # Keeps the script running until "Esc" is pressed
+            # Optional: Add a small delay to avoid excessive CPU usage
+            cv2.waitKey(2)
+
+def stop_capture():
+    global capture_running
+    print("🛑 Stopping capture...")
+    capture_running = False
+
+# Set up a keyboard shortcut to start real-time capture and analysis
+keyboard.add_hotkey("ctrl+alt+t", lambda: threading.Thread(target=capture_and_analyze).start())
+# Set up a keyboard shortcut to stop the capture (press "Esc")
+keyboard.add_hotkey("esc", stop_capture)
+
+print("🔴 Press Ctrl+Alt+T to start real-time capture and analysis.")
+print("🛑 Press Esc to stop capture.")
+
+keyboard.wait()  # Keeps the script running indefinitely
