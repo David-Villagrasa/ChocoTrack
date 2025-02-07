@@ -6,6 +6,7 @@ TODO extended
     - settings to change the monitor and area of tesseract
     - info button with info of how is everything calculated & how are the diferent type of jockeys
     - deal with Readme.md (every calculator info extraxted from https://github.com/ff7man/ff7man.github.io/blob/main/calc.html & https://forums.qhimm.com/index.php?topic=21011.0)
+    - use the gaussian blur & train the nn/tesseract to recognise each number
 '''
 def main():
     root = create_gui()
